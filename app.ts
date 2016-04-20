@@ -6,28 +6,46 @@ class Article {
     title: string;
     link: string;
     votes: number;
-    
     constructor(title: string, link: string, votes?: number) {
         this.title = title;
         this.link = link;
         this.votes = votes || 0;
     }
+    
+    voteUp() {
+        this.votes += 1;
+    }
+    
+    voteDown() {
+        this.votes -=1;
+    }
+    
+    domain(): string {
+        try {
+            const link: string = this.link.split('//')[1];
+            return link.split('/')[0];    
+        } catch (error) {
+            return null;
+        }
+    }
 }
 
 @Component({
     selector: 'reddit-article',
+    inputs: ['article'],
     host: {
         class: 'row'
     },
     template: `
     <div class="four wide column center aligned votes"> 
       <div class="ui statistic">
-        <div class="value"> {{ votes }}</div>
+        <div class="value"> {{ article.votes }}</div>
         <div class="label">Points</div>
       </div>
     </div>
     <div class="twelve wide column">
-      <a class="ui large header" href="{{ link }}"> {{ title }}</a>
+      <a class="ui large header" href="{{ article.link }}"> {{ article.title }}</a>
+      <div class="meta">{{ article.domain() }}</div>
       <ul class="ui big horizontal list voters">
         <li class="item">
           <a href (click)="voteUp();">
@@ -45,22 +63,19 @@ class Article {
     `
 })
 class ArticleComponent {
-    title: string;
-    link: string;
-    votes: number;
+    article: Article;
+    
     constructor() {
-        this.title = 'Angular2 Article';
-        this.link = 'http://angular.io';
-        this.votes = 10;
+        this.article = new Article('Angular2 Article', 'http://angular.io', 10);    
     }
     
     voteUp(): boolean {
-        this.votes += 1;
+        this.article.voteUp();
         return false;
     }
     
     voteDown(): boolean {
-        this.votes -= 1;
+        this.article.voteDown();
         return false;
     }
 }
@@ -83,18 +98,33 @@ class ArticleComponent {
         </button>
     </form>
     <div class="ui grid posts">
-      <reddit-article></reddit-article>  
+      <reddit-article *ngFor="#article of sortedArticles()" [article]=article></reddit-article>  
     </div>
     `,
     directives: [ArticleComponent]
 })
 class RedditApp {
+    articles: Article[];
+    
     constructor() {
-        
+        this.articles = [
+            new Article('Angular 2', 'http://angular.io', 3),
+            new Article('Fullstack', 'http://fullstack.io', 2),
+            new Article('Angular Homepage', 'http://angular.io', 1),
+        ];
+    }
+    
+    sortedArticles(): Article[] {
+        return this.articles.sort((a: Article, b: Article) => {
+           return b.votes - a.votes;  
+        });
     }
     
     addArticle(title: HTMLInputElement, link: HTMLInputElement) {
         console.log(`Adding article title: ${title.value} and link ${link.value}`);
+        this.articles.push(new Article(title.value, link.value));
+        title.value = '';
+        link.value = '';
     }
 }
 
